@@ -1,0 +1,63 @@
+Here’s the **enhanced and structured version** of your original prompt, optimized for clarity, creativity, and maximum quality output from an AI model that generates image prompts:  
+
+---
+
+**ROLE & STYLE**  
+You are an **expert conceptual artist and visual storyteller** skilled in symbolic, satirical, and political art. Your goal is to design imagery that carries *powerful visual meaning* through elegant composition, sophisticated symbolism, and poetic nuance.  
+
+---
+
+### **CONTROL PANEL**
+- **Reasoning Mode:** Deep Think – reflect on symbolism, message, and tone.
+- **Verbosity:** Detailed and expressive; full descriptive richness.
+- **Tools:** Web, code, and design reasoning as needed.
+- **Self-Reflect:** Continuously refine visual and thematic choices for clarity and impact.
+- **Meta-Fix:** Ensure composition and narrative coherence.
+
+---
+
+### **TASK**
+Create a **high-quality image generation prompt** for a **parody artwork titled “Crown & Throne Parody.”**  
+
+The scene should feature a **gilded crown or ornate throne** as the central focus. The artwork should communicate the concept of *power belonging to the people rather than monarchs or elites.*  
+Style may blend realism, satire, and symbolic contrast — evoking both grandeur and subversion.
+
+---
+
+### **IMAGE CONTENT REQUIREMENTS**
+**Primary Subject:**  
+- A beautifully detailed **golden crown or throne**, traditional and majestic in design (e.g., baroque, regal, adorned with opulent details).  
+- A subtle **twist or parody** that undermines the idea of monarchy — signs of wear, a hand-sketched alteration, or democratic symbols replacing royal ones.  
+- Composition conveys the reclaiming of authority — the people’s power replacing the throne’s occupant.
+
+**Environment & Mood:**  
+- Background could suggest a grand hall, empty palace, or modern metaphorical space.  
+- Balance light and shadow to emphasize irony: the fading of royal glamour against a rising collective voice.  
+- Use symbolic colors: golds and blues for heritage, contrasted with earthy or diverse tones representing the people.
+
+**Stylistic Reference:**  
+Can draw from artistic realism, digital painting, satirical editorial illustration, or cinematic poster design.
+
+---
+
+### **CAPTION / TEXT TO INCLUDE IN IMAGE**  
+> “This seat is taken by we the people — No kings, Oct 18.”
+
+Typography should feel assertive yet refined — reminiscent of civic protest posters or political art prints.
+
+---
+
+### **OUTPUT FORMAT (for the AI model)**  
+Produce a **fully detailed visual prompt** suitable for text-to-image generation.  
+Ensure it includes artistic style, lighting, mood, composition, symbolism, and reference aesthetics.
+
+---
+
+### **EXAMPLE OUTPUT STRUCTURE**
+
+**Prompt Example (format):**  
+> A gilded throne stands empty in a sunlit hall, its velvet cushions imprinted as if recently vacated. The crown rests tilted on the armrest, reflecting fractured light. Around it rise faint silhouettes or emblems symbolizing unity and equality — the voice of the people filling the void of monarchy. Cinematic lighting, photorealistic texture, painterly depth, high dynamic range, political parody artwork, detailed composition. Caption text elegantly displayed: “This seat is taken by we the people — No kings, Oct 18.”
+
+---
+
+Would you like this prompt optimized for a particular **image generation model** (e.g., Midjourney, DALL·E, Stable Diffusion)? I can tailor formatting and keyword structure accordingly.

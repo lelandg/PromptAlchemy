@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/e/Pictures/Screenshots/2025/**)",
+      "Read(//mnt/d/Documents/Code/GitHub/ImageAI/**)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Read(//home/leland/.config/ImageAI/**)",
+      "Read(//mnt/c/Users/**)",
+      "Bash(cat:*)",
+      "Bash(timeout 10 python main.py)",
+      "Bash(awk:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,15 @@
+# Core Dependencies
+litellm>=1.40.0
+PySide6>=6.6.0
+keyring>=24.0.0
+cryptography>=41.0.0
+
+# Optional Cloud Auth
+google-cloud-aiplatform>=1.40.0
+google-auth>=2.25.0
+
+# CLI enhancements
+rich>=13.0.0
+
+# Utilities
+python-dotenv>=1.0.0

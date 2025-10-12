@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+.venv_linux/
+venv/
+ENV/
+env/
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VS Code
+.vscode/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Logs
+*.log
+imageai_current.log
+promptalchemy_current.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Sensitive data
+.env
+.env.local
+config_local.json
+secrets.json
+api_keys.txt
+
+# User data (git should not track user's personal data)
+user_data/
+test_output/
+output/
+"./No Kings meme 01.txt"
