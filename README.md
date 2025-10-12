@@ -1,8 +1,12 @@
 # PromptAlchemy
 
-**Transform simple prompts into sophisticated, structured LLM prompts**
+## **Transform simple prompts into sophisticated, structured LLM prompts**
 
-PromptAlchemy is a cross-platform application that enhances your LLM prompts using advanced prompt engineering techniques. It supports both GUI and CLI interfaces, multiple LLM providers via litellm, and includes project management and history tracking.
+> **PromptAlchemy** is a cross-platform application that enhances your LLM prompts using advanced prompt engineering techniques.
+> 
+> **Supports GUI and CLI interfaces, multiple LLM providers via litellm, and includes project management and history tracking.**
+
+![Prompt Alchemist 01.png|33%](Prompt%20Alchemist%2001.png)
 
 ## Features
 
