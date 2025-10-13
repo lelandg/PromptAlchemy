@@ -25,7 +25,8 @@ PromptAlchemy/
 │   ├── security.py     # API key storage, rate limiting
 │   ├── llm_models.py   # LLM provider definitions
 │   ├── enhancer.py     # Prompt enhancement engine
-│   └── history.py      # History tracking
+│   ├── history.py      # History tracking
+│   └── version.py      # Central version management
 ├── gui/                # PySide6 GUI components
 │   ├── __init__.py
 │   ├── main_window.py  # Main application window
@@ -44,9 +45,36 @@ PromptAlchemy/
 ├── main.py             # GUI entry point
 ├── requirements.txt    # Python dependencies
 ├── .gitignore
+├── CHANGELOG.md        # Version history
 ├── CLAUDE.md           # This file
 └── README.md           # User documentation
 ```
+
+## Version Management
+
+**Current Version**: 0.2.0
+
+### Version Update Checklist
+When releasing a new version, update the following files:
+
+1. **`core/version.py`** (line 3)
+   - Update `__version__ = "X.Y.Z"`
+   - Update `__version_info__ = (X, Y, Z)`
+
+2. **`CHANGELOG.md`**
+   - Add new version section at top with date (YYYY-MM-DD format)
+   - Document all changes under Added/Changed/Fixed/Removed sections
+   - Follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format
+
+3. **Version Display (automatic via import)**
+   - `gui/main_window.py`: Imports from `core.version` and displays in title bar
+   - `cli/main.py`: Imports from `core.version` and displays in header and `--version`
+
+### Version Display Locations
+- **GUI**: Title bar shows "PromptAlchemy vX.Y.Z - LLM Prompt Enhancer"
+- **CLI**: Header printed at start of each command shows version
+- **CLI**: `--version` flag shows current version
+- **CLI**: Help text (`--help`) shows version in description
 
 ## Development Guidelines
 

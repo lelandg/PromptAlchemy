@@ -14,6 +14,7 @@ from core.enhancer import PromptEnhancer
 from core.history import HistoryManager
 from core.projects import ProjectManager
 from core.llm_models import get_all_provider_ids, get_provider_models, get_provider_display_name
+from core.version import __version__
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 def setup_argparse() -> argparse.ArgumentParser:
     """Set up argument parser with all CLI options."""
     parser = argparse.ArgumentParser(
-        description="PromptAlchemy - Transform simple prompts into sophisticated LLM prompts",
+        description=f"PromptAlchemy v{__version__} - Transform simple prompts into sophisticated LLM prompts",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -43,7 +44,7 @@ Examples:
         """
     )
 
-    parser.add_argument('--version', action='version', version='PromptAlchemy 1.0.0')
+    parser.add_argument('--version', action='version', version=f'PromptAlchemy v{__version__}')
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
@@ -373,6 +374,12 @@ def cmd_config(args, config: ConfigManager):
     return 0
 
 
+def print_header():
+    """Print CLI header with version."""
+    print(f"\nPromptAlchemy v{__version__} - LLM Prompt Enhancer")
+    print("=" * 50 + "\n")
+
+
 def main():
     """Main CLI entry point."""
     parser = setup_argparse()
@@ -381,6 +388,10 @@ def main():
     if not args.command:
         parser.print_help()
         return 0
+
+    # Print header (except for --version flag)
+    if not hasattr(args, 'version'):
+        print_header()
 
     # Initialize config
     config = ConfigManager()

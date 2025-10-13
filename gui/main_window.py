@@ -10,10 +10,11 @@ from PySide6.QtWidgets import (
     QTextEdit, QPlainTextEdit, QPushButton, QLabel, QComboBox, QCheckBox,
     QLineEdit, QGroupBox, QListWidget, QListWidgetItem, QFileDialog,
     QMessageBox, QProgressDialog, QSpinBox, QDoubleSpinBox, QFormLayout,
-    QSplitter, QFrame, QTableWidget, QTableWidgetItem, QHeaderView
+    QSplitter, QFrame, QTableWidget, QTableWidgetItem, QHeaderView,
+    QApplication
 )
-from PySide6.QtCore import Qt, QThread, Signal, QSettings
-from PySide6.QtGui import QFont, QTextCursor
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QFont, QTextCursor, QShortcut, QKeySequence
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -23,7 +24,9 @@ from core.enhancer import PromptEnhancer
 from core.history import HistoryManager
 from core.projects import ProjectManager
 from core.llm_models import get_all_provider_ids, get_provider_models, get_provider_display_name
-from core.constants import REASONING_MODES, VERBOSITY_LEVELS, TOOL_OPTIONS
+from core.constants import REASONING_MODES, VERBOSITY_LEVELS, TOOL_OPTIONS, DEFAULT_ROLES
+from core.version import __version__
+from gui.tabs.help_tab import HelpTab
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +58,13 @@ class PromptAlchemyMainWindow(QMainWindow):
         self.enhancer = PromptEnhancer(self.config)
         self.history_manager = HistoryManager(self.config.get_history_path())
         self.project_manager = ProjectManager(self.config.get_projects_dir())
-        self.settings = QSettings("PromptAlchemy", "PromptAlchemy")
 
         self.init_ui()
         self.load_ui_state()
 
     def init_ui(self):
         """Initialize the user interface."""
-        self.setWindowTitle("PromptAlchemy - LLM Prompt Enhancer")
+        self.setWindowTitle(f"PromptAlchemy v{__version__} - LLM Prompt Enhancer")
         self.setMinimumSize(1000, 700)
 
         # Central widget
@@ -79,11 +81,19 @@ class PromptAlchemyMainWindow(QMainWindow):
         self.create_history_tab()
         self.create_projects_tab()
         self.create_settings_tab()
+        self.create_help_tab()
+
+        # Add global hotkeys
+        self.setup_hotkeys()
 
     def create_enhance_tab(self):
         """Create the main enhancement tab."""
         tab = QWidget()
-        layout = QVBoxLayout(tab)
+        main_layout = QVBoxLayout(tab)
+
+        # Create splitter for resizable sections
+        splitter = QSplitter(Qt.Vertical)
+        main_layout.addWidget(splitter)
 
         # Control Panel
         control_group = QGroupBox("Control Panel")
@@ -92,36 +102,101 @@ class PromptAlchemyMainWindow(QMainWindow):
         # Provider and Model
         provider_layout = QHBoxLayout()
         self.provider_combo = QComboBox()
+        self.provider_combo.setToolTip("Select the LLM provider (OpenAI, Anthropic, Google, etc.)")
         for provider_id in get_all_provider_ids():
             self.provider_combo.addItem(get_provider_display_name(provider_id), provider_id)
         self.provider_combo.currentIndexChanged.connect(self.on_provider_changed)
         provider_layout.addWidget(self.provider_combo)
 
         self.model_combo = QComboBox()
+        self.model_combo.setToolTip("Select the specific model to use for enhancement")
         provider_layout.addWidget(self.model_combo, 1)
         control_layout.addRow("Provider / Model:", provider_layout)
 
-        # Role
-        self.role_edit = QLineEdit()
-        self.role_edit.setPlaceholderText("e.g., an expert assistant, a senior developer...")
-        control_layout.addRow("Role:", self.role_edit)
+        # Role with combo and management
+        role_layout = QHBoxLayout()
+        self.role_combo = QComboBox()
+        self.role_combo.setEditable(True)
+        self.role_combo.setInsertPolicy(QComboBox.NoInsert)
+        self.role_combo.setToolTip("Define the role or persona for the LLM to assume\n"
+                                   "You can select from presets or type a custom role")
+        self.populate_roles()
+        role_layout.addWidget(self.role_combo, 1)
+
+        add_role_btn = QPushButton("+")
+        add_role_btn.setMaximumWidth(30)
+        add_role_btn.setToolTip("Add current role to custom roles")
+        add_role_btn.clicked.connect(self.add_custom_role)
+        role_layout.addWidget(add_role_btn)
+
+        self.role_sort_combo = QComboBox()
+        self.role_sort_combo.addItems(["Name ↑", "Name ↓", "Date ↑", "Date ↓"])
+        self.role_sort_combo.setMaximumWidth(80)
+        self.role_sort_combo.setToolTip("Sort roles")
+        self.role_sort_combo.currentTextChanged.connect(self.sort_roles)
+        role_layout.addWidget(self.role_sort_combo)
+
+        control_layout.addRow("Role:", role_layout)
 
         # Reasoning Mode
         self.reasoning_combo = QComboBox()
         self.reasoning_combo.addItems(REASONING_MODES)
+        self.reasoning_combo.setToolTip(
+            "Control the depth of reasoning:\n"
+            "• Standard: Normal reasoning depth\n"
+            "• Deep Think: Enhanced analytical thinking\n"
+            "• Ultra Think: Maximum reasoning depth\n"
+            "• Chain of Thought: Step-by-step logical reasoning\n"
+            "• Step by Step: Explicit step-by-step breakdown"
+        )
         control_layout.addRow("Reasoning:", self.reasoning_combo)
 
         # Verbosity
         self.verbosity_combo = QComboBox()
         self.verbosity_combo.addItems(VERBOSITY_LEVELS)
         self.verbosity_combo.setCurrentText("medium")
+        self.verbosity_combo.setToolTip(
+            "Control response detail level:\n"
+            "• minimal: Brief, concise responses\n"
+            "• concise: Compact but complete\n"
+            "• medium: Balanced detail (recommended)\n"
+            "• detailed: Thorough explanations\n"
+            "• comprehensive: Maximum detail and examples"
+        )
         control_layout.addRow("Verbosity:", self.verbosity_combo)
 
         # Tools
         tools_layout = QHBoxLayout()
         self.tool_checks = {}
+        tool_tooltips = {
+            "web": "Web Search Tool\n"
+                   "✓ Benefits: Access to current information, facts, news\n"
+                   "✗ Risks: May add latency, potential for outdated/incorrect info\n"
+                   "⚠ Note: Requires provider support for web search",
+            "code": "Code Execution Tool\n"
+                    "✓ Benefits: Can run and test code, validate logic\n"
+                    "✗ Risks: Security concerns, execution time\n"
+                    "⚠ Caution: Only use with trusted prompts",
+            "pdf": "PDF Processing Tool\n"
+                   "✓ Benefits: Extract text and data from PDF files\n"
+                   "✗ Risks: Large files may be slow to process\n"
+                   "⚠ Note: Requires file attachment support",
+            "image": "Image Analysis Tool\n"
+                     "✓ Benefits: Visual understanding, OCR, image description\n"
+                     "✗ Risks: Interpretation accuracy varies\n"
+                     "⚠ Note: Requires multimodal model support",
+            "calculator": "Mathematical Calculator Tool\n"
+                         "✓ Benefits: Precise calculations, complex math\n"
+                         "✗ Risks: Limited to numerical operations\n"
+                         "⚠ Note: Best for computational tasks",
+            "file": "File System Tool\n"
+                    "✓ Benefits: Read/write files, access local data\n"
+                    "✗ Risks: File system access, potential data exposure\n"
+                    "⚠ Caution: Use with caution in production"
+        }
         for tool in TOOL_OPTIONS:
             cb = QCheckBox(tool)
+            cb.setToolTip(tool_tooltips.get(tool, f"Enable {tool} tool"))
             self.tool_checks[tool] = cb
             tools_layout.addWidget(cb)
         tools_layout.addStretch()
@@ -131,33 +206,60 @@ class PromptAlchemyMainWindow(QMainWindow):
         options_layout = QHBoxLayout()
         self.self_reflect_check = QCheckBox("Self-Reflect")
         self.self_reflect_check.setChecked(True)
+        self.self_reflect_check.setToolTip(
+            "Self-Reflection Option\n"
+            "✓ Benefits:\n"
+            "  • Improved prompt quality through self-review\n"
+            "  • Identifies ambiguities and gaps\n"
+            "  • More thoughtful, nuanced outputs\n"
+            "✗ Risks:\n"
+            "  • Increased token usage (~20-30%)\n"
+            "  • Longer processing time\n"
+            "  • May over-complicate simple prompts\n"
+            "⚠ Recommended: Enable for complex or critical prompts"
+        )
         options_layout.addWidget(self.self_reflect_check)
 
         self.meta_fix_check = QCheckBox("Meta-Fix")
         self.meta_fix_check.setChecked(True)
+        self.meta_fix_check.setToolTip(
+            "Meta-Fix Option\n"
+            "✓ Benefits:\n"
+            "  • Automatically corrects common prompt issues\n"
+            "  • Improves clarity and specificity\n"
+            "  • Optimizes structure and formatting\n"
+            "✗ Risks:\n"
+            "  • May alter original intent slightly\n"
+            "  • Additional processing overhead\n"
+            "  • Can be overly aggressive on simple prompts\n"
+            "⚠ Recommended: Enable for first-time or draft prompts"
+        )
         options_layout.addWidget(self.meta_fix_check)
         options_layout.addStretch()
         control_layout.addRow("Options:", options_layout)
 
         control_group.setLayout(control_layout)
-        layout.addWidget(control_group)
+        splitter.addWidget(control_group)
 
         # Prompt Input
         prompt_group = QGroupBox("Original Prompt")
         prompt_layout = QVBoxLayout()
         self.prompt_input = QPlainTextEdit()
         self.prompt_input.setPlaceholderText("Enter your prompt here...")
+        self.prompt_input.setToolTip("Enter the original prompt you want to enhance\nPress Ctrl+Enter to start enhancement")
         prompt_layout.addWidget(self.prompt_input)
 
         # Inputs and Deliverables
         extras_layout = QHBoxLayout()
         self.inputs_edit = QLineEdit()
         self.inputs_edit.setPlaceholderText("Optional: Additional inputs...")
+        self.inputs_edit.setToolTip("Specify any additional context, data, or inputs needed for the task")
         extras_layout.addWidget(QLabel("Inputs:"))
         extras_layout.addWidget(self.inputs_edit)
 
         self.deliverables_edit = QLineEdit()
         self.deliverables_edit.setPlaceholderText("Optional: Expected deliverables...")
+        self.deliverables_edit.setToolTip("Describe the expected output format or deliverables")
         extras_layout.addWidget(QLabel("Deliverables:"))
         extras_layout.addWidget(self.deliverables_edit)
         prompt_layout.addLayout(extras_layout)
@@ -180,7 +282,7 @@ class PromptAlchemyMainWindow(QMainWindow):
         prompt_layout.addLayout(attach_layout)
 
         prompt_group.setLayout(prompt_layout)
-        layout.addWidget(prompt_group)
+        splitter.addWidget(prompt_group)
 
         # Enhanced Output
         output_group = QGroupBox("Enhanced Prompt")
@@ -189,28 +291,39 @@ class PromptAlchemyMainWindow(QMainWindow):
         self.enhanced_output.setReadOnly(True)
         output_layout.addWidget(self.enhanced_output)
         output_group.setLayout(output_layout)
-        layout.addWidget(output_group)
+        splitter.addWidget(output_group)
 
-        # Buttons
+        # Set initial splitter sizes (proportional)
+        splitter.setSizes([200, 300, 300])
+
+        # Buttons (outside splitter, at bottom)
         button_layout = QHBoxLayout()
         self.enhance_btn = QPushButton("Enhance Prompt")
+        self.enhance_btn.setToolTip("Enhance the prompt using the selected provider and settings\nShortcut: Ctrl+Enter")
         self.enhance_btn.clicked.connect(self.enhance_prompt)
         button_layout.addWidget(self.enhance_btn)
 
+        # Add Ctrl+Enter shortcut for enhance button
+        enhance_shortcut = QShortcut(QKeySequence("Ctrl+Return"), self)
+        enhance_shortcut.activated.connect(self.enhance_prompt)
+
         self.copy_btn = QPushButton("Copy to Clipboard")
+        self.copy_btn.setToolTip("Copy the enhanced prompt to clipboard\nShortcut: Ctrl+C")
         self.copy_btn.clicked.connect(self.copy_enhanced)
         button_layout.addWidget(self.copy_btn)
 
         self.save_btn = QPushButton("Save to File")
+        self.save_btn.setToolTip("Save the enhanced prompt to a text or markdown file\nShortcut: Ctrl+S")
         self.save_btn.clicked.connect(self.save_enhanced)
         button_layout.addWidget(self.save_btn)
 
         save_project_btn = QPushButton("Save to Project")
+        save_project_btn.setToolTip("Save this enhancement to a project collection for later reference")
         save_project_btn.clicked.connect(self.save_to_project)
         button_layout.addWidget(save_project_btn)
 
         button_layout.addStretch()
-        layout.addLayout(button_layout)
+        main_layout.addLayout(button_layout)
 
         self.tabs.addTab(tab, "Enhance")
 
@@ -279,6 +392,9 @@ class PromptAlchemyMainWindow(QMainWindow):
         layout.addLayout(btn_layout)
 
         self.tabs.addTab(tab, "History")
+
+        # Load history on startup
+        self.refresh_history()
 
     def create_projects_tab(self):
         """Create the projects management tab."""
@@ -462,6 +578,144 @@ class PromptAlchemyMainWindow(QMainWindow):
         layout.addStretch()
         self.tabs.addTab(tab, "Settings")
 
+    def create_help_tab(self):
+        """Create the help documentation tab."""
+        help_tab = HelpTab(self.config)
+        self.tabs.addTab(help_tab, "Help")
+
+    def setup_hotkeys(self):
+        """Setup keyboard shortcuts for the application."""
+        # Tab navigation hotkeys (Enhance, History, Projects, Settings, Help)
+        for i in range(5):
+            shortcut = QShortcut(QKeySequence(f"Alt+{i+1}"), self)
+            shortcut.activated.connect(lambda idx=i: self.tabs.setCurrentIndex(idx))
+
+        # Copy shortcut (Ctrl+C)
+        copy_shortcut = QShortcut(QKeySequence.Copy, self)
+        copy_shortcut.activated.connect(self.copy_enhanced)
+
+        # Save shortcut (Ctrl+S)
+        save_shortcut = QShortcut(QKeySequence.Save, self)
+        save_shortcut.activated.connect(self.save_enhanced)
+
+        # Refresh history (F5)
+        refresh_shortcut = QShortcut(QKeySequence.Refresh, self)
+        refresh_shortcut.activated.connect(self.refresh_history)
+
+        # New project (Ctrl+N)
+        new_project_shortcut = QShortcut(QKeySequence.New, self)
+        new_project_shortcut.activated.connect(self.create_project)
+
+    def populate_roles(self):
+        """Populate role combo with default and custom roles."""
+        from datetime import datetime
+
+        self.role_combo.clear()
+
+        # Get custom roles from config
+        custom_roles = self.config.get("custom_roles", [])
+
+        # Combine default and custom roles
+        all_roles = []
+
+        # Add custom roles with metadata
+        for role_data in custom_roles:
+            if isinstance(role_data, dict):
+                all_roles.append(role_data)
+            else:
+                # Legacy format - convert to dict
+                all_roles.append({
+                    "role": role_data,
+                    "date_added": datetime.now().isoformat(),
+                    "is_custom": True
+                })
+
+        # Add default roles
+        for role in DEFAULT_ROLES:
+            all_roles.append({
+                "role": role,
+                "date_added": "2025-01-01T00:00:00",
+                "is_custom": False
+            })
+
+        # Remove duplicates (keep first occurrence)
+        seen = set()
+        unique_roles = []
+        for role_data in all_roles:
+            role_text = role_data["role"]
+            if role_text not in seen:
+                seen.add(role_text)
+                unique_roles.append(role_data)
+
+        # Store all roles
+        self.all_roles = unique_roles
+
+        # Apply current sort
+        self.sort_roles(self.role_sort_combo.currentText() if hasattr(self, 'role_sort_combo') else "Name ↑")
+
+    def sort_roles(self, sort_mode: str = "Name ↑"):
+        """Sort roles based on the selected mode."""
+        if not hasattr(self, 'all_roles'):
+            return
+
+        current_text = self.role_combo.currentText()
+
+        if sort_mode == "Name ↑":
+            sorted_roles = sorted(self.all_roles, key=lambda x: x["role"].lower())
+        elif sort_mode == "Name ↓":
+            sorted_roles = sorted(self.all_roles, key=lambda x: x["role"].lower(), reverse=True)
+        elif sort_mode == "Date ↑":
+            sorted_roles = sorted(self.all_roles, key=lambda x: x["date_added"])
+        else:  # Date ↓
+            sorted_roles = sorted(self.all_roles, key=lambda x: x["date_added"], reverse=True)
+
+        # Update combo
+        self.role_combo.clear()
+        for role_data in sorted_roles:
+            self.role_combo.addItem(role_data["role"])
+
+        # Restore current selection
+        if current_text:
+            index = self.role_combo.findText(current_text)
+            if index >= 0:
+                self.role_combo.setCurrentIndex(index)
+
+    def add_custom_role(self):
+        """Add current role to custom roles list."""
+        from datetime import datetime
+
+        role_text = self.role_combo.currentText().strip()
+        if not role_text:
+            QMessageBox.warning(self, "Error", "Please enter a role first.")
+            return
+
+        # Check if already exists
+        for role_data in self.all_roles:
+            if role_data["role"].lower() == role_text.lower():
+                QMessageBox.information(self, "Info", "This role already exists in the list.")
+                return
+
+        # Add to custom roles
+        custom_roles = self.config.get("custom_roles", [])
+        new_role = {
+            "role": role_text,
+            "date_added": datetime.now().isoformat(),
+            "is_custom": True
+        }
+        custom_roles.append(new_role)
+        self.config.set("custom_roles", custom_roles)
+        self.config.save()
+
+        # Refresh roles list
+        self.populate_roles()
+
+        # Select the newly added role
+        index = self.role_combo.findText(role_text)
+        if index >= 0:
+            self.role_combo.setCurrentIndex(index)
+
+        QMessageBox.information(self, "Success", f"Role '{role_text}' added to custom roles!")
+
     def on_provider_changed(self, index):
         """Handle provider selection change."""
         provider_id = self.provider_combo.currentData()
@@ -511,7 +765,7 @@ class PromptAlchemyMainWindow(QMainWindow):
                 return
 
         # Gather settings
-        role = self.role_edit.text() or None
+        role = self.role_combo.currentText() or None
         reasoning = self.reasoning_combo.currentText() or None
         verbosity = self.verbosity_combo.currentText() or None
         tools = [tool for tool, cb in self.tool_checks.items() if cb.isChecked()] or None
@@ -683,10 +937,17 @@ class PromptAlchemyMainWindow(QMainWindow):
         """Refresh projects list."""
         self.projects_list.clear()
         projects = self.project_manager.list_projects()
-        for project in projects:
-            item = QListWidgetItem(f"{project['name']} ({project['prompt_count']} prompts)")
-            item.setData(Qt.UserRole, project)
+
+        if not projects:
+            # Add a helpful message when no projects exist
+            item = QListWidgetItem("No projects yet. Click 'New Project' to create one.")
+            item.setFlags(Qt.ItemIsEnabled)  # Make it non-selectable
             self.projects_list.addItem(item)
+        else:
+            for project in projects:
+                item = QListWidgetItem(f"{project['name']} ({project['prompt_count']} prompts)")
+                item.setData(Qt.UserRole, project)
+                self.projects_list.addItem(item)
 
     def on_project_selected(self, current, previous):
         """Handle project selection."""
@@ -850,18 +1111,79 @@ class PromptAlchemyMainWindow(QMainWindow):
             )
 
     def load_ui_state(self):
-        """Load UI state from settings."""
-        geometry = self.settings.value("geometry")
-        if geometry:
-            self.restoreGeometry(geometry)
+        """Load UI state from config."""
+        state = self.config.load_ui_state()
 
-        state = self.settings.value("windowState")
-        if state:
-            self.restoreState(state)
+        # Restore window geometry
+        if "geometry" in state:
+            try:
+                geometry_bytes = bytes.fromhex(state["geometry"])
+                self.restoreGeometry(geometry_bytes)
+            except:
+                pass
+
+        # Restore window state
+        if "windowState" in state:
+            try:
+                window_state_bytes = bytes.fromhex(state["windowState"])
+                self.restoreState(window_state_bytes)
+            except:
+                pass
+
+        # Restore active tab
+        if "active_tab" in state:
+            self.tabs.setCurrentIndex(state["active_tab"])
+
+        # Restore control panel settings
+        if "provider" in state:
+            index = self.provider_combo.findData(state["provider"])
+            if index >= 0:
+                self.provider_combo.setCurrentIndex(index)
+
+        if "model" in state:
+            index = self.model_combo.findText(state["model"])
+            if index >= 0:
+                self.model_combo.setCurrentIndex(index)
+
+        if "role" in state:
+            self.role_combo.setCurrentText(state["role"])
+
+        if "reasoning" in state:
+            index = self.reasoning_combo.findText(state["reasoning"])
+            if index >= 0:
+                self.reasoning_combo.setCurrentIndex(index)
+
+        if "verbosity" in state:
+            index = self.verbosity_combo.findText(state["verbosity"])
+            if index >= 0:
+                self.verbosity_combo.setCurrentIndex(index)
+
+        if "tools" in state:
+            for tool, checked in state["tools"].items():
+                if tool in self.tool_checks:
+                    self.tool_checks[tool].setChecked(checked)
+
+        if "self_reflect" in state:
+            self.self_reflect_check.setChecked(state["self_reflect"])
+
+        if "meta_fix" in state:
+            self.meta_fix_check.setChecked(state["meta_fix"])
 
     def closeEvent(self, event):
         """Handle window close event."""
-        # Save UI state
-        self.settings.setValue("geometry", self.saveGeometry())
-        self.settings.setValue("windowState", self.saveState())
+        # Save UI state to config
+        state = {
+            "geometry": self.saveGeometry().hex(),
+            "windowState": self.saveState().hex(),
+            "active_tab": self.tabs.currentIndex(),
+            "provider": self.provider_combo.currentData(),
+            "model": self.model_combo.currentText(),
+            "role": self.role_combo.currentText(),
+            "reasoning": self.reasoning_combo.currentText(),
+            "verbosity": self.verbosity_combo.currentText(),
+            "tools": {tool: cb.isChecked() for tool, cb in self.tool_checks.items()},
+            "self_reflect": self.self_reflect_check.isChecked(),
+            "meta_fix": self.meta_fix_check.isChecked()
+        }
+        self.config.save_ui_state(state)
         event.accept()
