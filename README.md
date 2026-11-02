@@ -55,7 +55,7 @@ The Enhance tab provides a comprehensive control panel with:
 ## Installation
 
 ### Requirements
-- Python 3.8+
+- Python 3.11+
 - Windows, macOS, or Linux
 
 ### Quick Start

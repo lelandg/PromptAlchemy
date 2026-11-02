@@ -1,5 +1,9 @@
+# Requires Python 3.11 or newer.
+# Raised from Python 3.8: the security floors below (notably filelock>=4.2.1)
+# have no advisory-free release supporting the older interpreters, so the
+# documented install would have failed there.
 # Core Dependencies
-litellm>=1.40.0
+litellm>=1.100.4
 PySide6>=6.6.0
 keyring>=24.0.0
 cryptography>=41.0.0
@@ -13,3 +17,30 @@ rich>=13.0.0
 
 # Utilities
 python-dotenv>=1.0.0
+
+# --- Security floors (transitive; lowest release clearing each advisory) ---
+filelock>=4.2.1
+# httpx2 / httpcore2 are DIRECT requirements here, deliberately, and
+# `pip install -r` of this file DOES install them. That is the accepted cost of
+# the only placement that works -- it is not an oversight, so do not "move them
+# to a constraints file" and do not collapse them into plain httpx.
+#
+# WHY THEY ARE NEEDED: litellm >= 1.103.0 declares `httpx2<3,>=2.5.0` under its
+# `proxy` and `mcp` EXTRAS, httpx2 pulls a matching httpcore2, and
+# osv-scanner's resolver expands those extras. Without these floors it resolves
+# httpx2 2.9.1 / httpcore2 2.9.1 and reports their advisories. Removing them
+# turned this repo's scan from green to 6 findings (3 High) -- 2026-11-01.
+#
+# WHY THEY CANNOT BE MOVED: osv-scanner scans each file as its own target and
+# does NOT apply a `-c` constraints file to the requirements file that includes
+# it, so a floor parked in one bounds nothing. Measured on ImageAI 2026-11-02,
+# which carries these lines in both places: dropping the direct pair and
+# relying on the `-c requirements-security.txt` copy took it from 114
+# advisories to 126, with httpx2 2.9.1 (10 advisories) and httpcore2 2.9.1 (2)
+# returning. Restoring the direct pair returned it to 114.
+#
+# Plain httpx is a SEPARATE distribution (latest 0.28.1) with only 2
+# advisories, both fixed in 0.23.0, already satisfied via litellm's own
+# `httpx>=0.28.0`.
+httpcore2>=2.10.0
+httpx2>=2.12.0
