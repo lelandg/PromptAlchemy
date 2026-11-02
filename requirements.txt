@@ -1,3 +1,7 @@
+# Requires Python 3.11 or newer.
+# Raised from Python 3.8: the security floors below (notably filelock>=4.2.1)
+# have no advisory-free release supporting the older interpreters, so the
+# documented install would have failed there.
 # Core Dependencies
 litellm>=1.100.4
 PySide6>=6.6.0
@@ -16,5 +20,4 @@ python-dotenv>=1.0.0
 
 # --- Security floors (transitive; lowest release clearing each advisory) ---
 filelock>=4.2.1
-httpcore2>=2.10.0
-httpx2>=2.12.0
+httpx>=0.23.0  # 2 advisories, both fixed in 0.23.0 (plain httpx, not the separate httpx2 distribution)
