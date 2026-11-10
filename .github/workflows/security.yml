@@ -34,6 +34,9 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Install gitleaks 8.30.1 (checksum-verified release binary)
+        # Download outside the PR-controlled checkout: a PR could commit a
+        # symlink named like a download target and have curl write through it.
+        working-directory: ${{ runner.temp }}
         run: |
           set -eu
           V=8.30.1
@@ -116,6 +119,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Install osv-scanner 2.7.0 (checksum-verified release binary)
+        # Download outside the PR-controlled checkout: a PR could commit a
+        # symlink named like a download target and have curl write through it.
+        working-directory: ${{ runner.temp }}
         run: |
           set -eu
           V=2.7.0
