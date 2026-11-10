@@ -1,3 +1,5 @@
 """Command-line interface for PromptAlchemy."""
 
-__version__ = "1.0.0"
+from core.version import __version__  # single source: core/version.py
+
+__all__ = ["__version__"]
