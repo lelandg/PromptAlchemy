@@ -444,7 +444,7 @@ python main.py
 
 ## License
 
-MIT License - 100% open source, commercial use allowed.
+MIT License - 100% open source, commercial use allowed. See [LICENSE](LICENSE).
 
 Copyright (c) 2025 PromptAlchemy
 
