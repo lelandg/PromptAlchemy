@@ -51,7 +51,10 @@ updates:
       day: monday
       time: "07:30"
       timezone: America/Chicago
-    open-pull-requests-limit: 1
+    # 2, not 1: major updates fall outside the `actions` group and open one PR
+    # each, so a limit of 1 would let one pending major block the weekly
+    # minor+patch group.
+    open-pull-requests-limit: 2
     cooldown:
       default-days: 7
     groups:
