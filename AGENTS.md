@@ -14,8 +14,8 @@ repo.
 
 - The version lives in `core/version.py` (`__version__` and
   `__version_info__`). The GUI title bar, CLI header, `--help`, and
-  `--version` import from there. `cli/__init__.py` holds a stale, unused
-  `__version__`; do not treat it as the version source.
+  `--version` import from there. The `cli`, `core` and `gui` packages
+  re-export that same `__version__`; never give them a literal of their own.
 - `core/config.py` auto-imports ImageAI auth on first run. It reads the
   sibling `ImageAI/config.json` in the platform config dir and, under WSL,
   globs `/mnt/c/Users/*/AppData/Roaming/ImageAI/config.json`. A blank
