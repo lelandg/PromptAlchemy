@@ -70,4 +70,6 @@ updates:
     # so no security update can ever fire for a pinned action. A weekly
     # VERSION update is therefore the only remediation path that exists, and
     # ignoring majors would remove it. Advisory DETECTION comes from the
-    # `github/actions` osv-scanner plugin named in security.yml.
+    # zizmor job in security.yml (known-vulnerable-actions maps a SHA pin to
+    # its release tag). The `github/actions` osv-scanner plugin only lists
+    # these actions; it detected no advisory in our tests.
