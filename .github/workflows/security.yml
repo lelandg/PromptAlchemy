@@ -498,10 +498,13 @@ jobs:
                           direct[name_] = oid
                   # zizmor queries advisories by the LONGEST tag on the pinned
                   # commit, so that tag must be a release tag (v1, v1.2, 1.2.3,
-                  # v2.0.0-rc.1+build.5, or an action-prefixed save/v1.0.0).
-                  # A commit whose longest tag is, say, `scratch-build` would
-                  # match no version range even if it also carries v1.2.3.
-                  release = re.compile(r"(?:[^/]+/)*v?\d+(?:\.\d+){0,3}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?")
+                  # v2.0.0-rc.1+build.5). A commit whose longest tag is, say,
+                  # `scratch-build` would match no version range even if it
+                  # also carries v1.2.3. Path-prefixed tags (save/v4.1.2, used
+                  # by some monorepo actions) are rejected on purpose: zizmor
+                  # sends the prefixed name to the advisory database, which
+                  # matches nothing, so such a pin would never be checked.
+                  release = re.compile(r"v?\d+(?:\.\d+){0,3}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?")
                   by_commit = {}
                   for n_, oid in direct.items():
                       by_commit.setdefault(peeled.get(n_, oid), []).append(n_[len("refs/tags/"):])
