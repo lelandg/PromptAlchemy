@@ -546,6 +546,9 @@ jobs:
       # is a tarball URL, not the registry, and is listed. The list needs the
       # lockfile's `packages` map (lockfileVersion 2 or 3): a v1 lockfile has
       # none, and the step fails rather than report nothing as "covered".
+      # `npm audit signatures` checks the installed tree only, so a registry
+      # entry npm ci did not install on this runner (an optional package for
+      # another platform) is reported as not checked, not as covered.
       - name: List dependencies that signatures do not cover
         if: steps.lock.outputs.present == 'true'
         run: |
@@ -584,7 +587,8 @@ jobs:
             // Workflow-command escaping: paths and URLs come from the lockfile, which a PR controls.
             // (No apostrophes in this script: it is one single-quoted shell argument.)
             const esc = (s) => String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-            let n = 0;
+            let n = 0, covered = 0;
+            const absent = [];
             for (const [path, p] of Object.entries(pkgs)) {
               if (!path || !p || p.link) continue;
               const r = p.resolved || "";
@@ -596,7 +600,19 @@ jobs:
               if (!ok || !p.integrity) {
                 n++;
                 console.log(`::warning title=${T}::${esc(path)} does not come from the registry ${esc(prefix)} with an integrity hash (${esc(r || "no resolved URL")}); its signature is not verified`);
+              } else if (!fs.existsSync(path)) {
+                // npm audit signatures checks the INSTALLED tree only. A lockfile
+                // key is its install path, so a registry entry that npm ci did
+                // not install here (an optional package for another platform)
+                // was not verified on this runner.
+                absent.push(path);
+              } else {
+                covered++;
               }
             }
-            console.log(n ? `${n} locked dependencies are not covered by signature verification` : `every locked dependency comes from ${prefix}`);
+            if (absent.length) {
+              const shown = absent.slice(0, 10).map(esc).join(", ");
+              console.log(`::notice title=${T}::${absent.length} registry dependencies in the lockfile were not installed on this runner (usually optional packages for another platform), so their signatures were not verified here: ${shown}${absent.length > 10 ? ", ..." : ""}`);
+            }
+            console.log(`${covered} installed registry dependencies covered by the signature check above; ${n} not from the registry ${prefix} (not covered); ${absent.length} not installed here (not checked)`);
           '
