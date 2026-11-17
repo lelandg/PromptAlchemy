@@ -5,6 +5,16 @@ All notable changes to PromptAlchemy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-11-17
+
+### Fixed
+- fix(deps): litellm floor 1.101.3 for Python 3.10 support
+- fix(deps): restore stable litellm floor again (no pre-release resolution)
+
+### Changed
+- chore(deps): Update litellm requirement from !=1.101.0,!=1.101.1,!=1.101.2,!=1.102.0,!=1.102.1,!=1.103.0,!=1.104.0rc1,!=1.107.0,>=1.100.4 to !=1.101.0,!=1.101.1,!=1.101.2,!=1.102.0,!=1.102.1,!=1.103.0,!=1.104.0rc1,!=1.107.0,>=1.110.0.dev2 in the minor-and-patch group (#12)
+- ci(security): check action advisories zizmor cannot see (reusable workflows, sub-action paths, renamed repos) (#11)
+
 ## [0.2.2] - 2026-11-12
 
 - Installs no longer pull a pre-release of litellm.
