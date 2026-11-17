@@ -7,13 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.3] - 2026-11-17
 
-### Fixed
-- fix(deps): litellm floor 1.101.3 for Python 3.10 support
-- fix(deps): restore stable litellm floor again (no pre-release resolution)
-
-### Changed
-- chore(deps): Update litellm requirement from !=1.101.0,!=1.101.1,!=1.101.2,!=1.102.0,!=1.102.1,!=1.103.0,!=1.104.0rc1,!=1.107.0,>=1.100.4 to !=1.101.0,!=1.101.1,!=1.101.2,!=1.102.0,!=1.102.1,!=1.103.0,!=1.104.0rc1,!=1.107.0,>=1.110.0.dev2 in the minor-and-patch group (#12)
-- ci(security): check action advisories zizmor cannot see (reusable workflows, sub-action paths, renamed repos) (#11)
+- Installs no longer pull litellm pre-release builds; litellm resolves to the latest stable release again (floor `litellm>=1.101.3`, which also keeps Python 3.10 working). This undoes the `>=1.110.0.dev2` floor that the 2026-11-16 Dependabot update (#12) set.
+- If you installed or updated PromptAlchemy's requirements on or after 2026-11-16, you may have a litellm development build. Replace it with: `python -m pip uninstall -y litellm`, then `python -m pip install -r requirements.txt`.
+- CI: the security workflow also checks GitHub Actions advisories that zizmor cannot see (#11).
 
 ## [0.2.2] - 2026-11-12
 
