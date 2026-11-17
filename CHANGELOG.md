@@ -5,6 +5,12 @@ All notable changes to PromptAlchemy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-11-17
+
+- Installs no longer pull litellm pre-release builds; litellm resolves to the latest stable release again (floor `litellm>=1.101.3`, which also keeps Python 3.10 working). This undoes the `>=1.110.0.dev2` floor that the 2026-11-16 Dependabot update (#12) set.
+- If you installed or updated PromptAlchemy's requirements on or after 2026-11-16, you may have a litellm development build. Replace it with: `python -m pip uninstall -y litellm`, then `python -m pip install -r requirements.txt`.
+- CI: the security workflow also checks GitHub Actions advisories that zizmor cannot see (#11).
+
 ## [0.2.2] - 2026-11-12
 
 - Installs no longer pull a pre-release of litellm.
